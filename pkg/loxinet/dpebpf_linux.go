@@ -1948,6 +1948,10 @@ func (e *DpEbpfH) DpSockVIPDel(w *SockVIPDpWorkQ) int {
 func (e *DpEbpfH) DpCnodeAdd(w *PeerDpWorkQ) int {
 	cnode := w.PeerIP.String()
 
+	if utils.IsIPHostAddr(cnode) {
+		return 0
+	}
+
 	cnodeStr := C.CString(cnode)
 	defer C.free(unsafe.Pointer(cnodeStr))
 
