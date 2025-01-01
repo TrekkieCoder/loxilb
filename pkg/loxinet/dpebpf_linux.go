@@ -913,7 +913,8 @@ func DpRouteMod(w *RouteDpWorkQ) int {
 
 		if w.NMax > 0 {
 			if w.Dst.IP.IsUnspecified() {
-				dat.ca.act_type = C.DP_SET_RT_NHNUM_DFLT
+				//dat.ca.act_type = C.DP_SET_RT_NHNUM_DFLT
+				dat.ca.act_type = C.DP_SET_RT_NHNUM
 			} else {
 				dat.ca.act_type = C.DP_SET_RT_NHNUM
 			}
