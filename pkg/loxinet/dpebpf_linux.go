@@ -1987,11 +1987,6 @@ func (e *DpEbpfH) DpLeaderSet(w *LeaderDpWorkQ) int {
 		state = C.int(1)
 	}
 	ec := int(C.llb_set_leader(state))
-	if ec != 0 {
-		*w.Status = DpCreateErr
-	} else {
-		*w.Status = 0
-	}
 	return ec
 }
 
