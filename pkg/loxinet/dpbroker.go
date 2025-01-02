@@ -211,6 +211,13 @@ type PeerDpWorkQ struct {
 	Status *DpStatusT
 }
 
+// LeaderDpWorkQ - work queue entry for leader association
+type LeaderDpWorkQ struct {
+	Work   DpWorkT
+	Leader bool
+	Status *DpStatusT
+}
+
 // FwOpT - type of firewall operation
 type FwOpT uint8
 
@@ -453,6 +460,7 @@ type DpHookInterface interface {
 	DpSockVIPDel(w *SockVIPDpWorkQ) int
 	DpCnodeAdd(w *PeerDpWorkQ) int
 	DpCnodeDel(w *PeerDpWorkQ) int
+	DpLeaderSet(w *LeaderDpWorkQ) int
 	DpTableGC()
 	DpCtGetAsync()
 	DpGetLock()
@@ -810,6 +818,11 @@ func (dp *DpH) DpWorkOnPeerOp(pWq *PeerDpWorkQ) DpRetT {
 	return DpWqUnkErr
 }
 
+// DpWorkOnLeaderState - routine to work on a setting leader state
+func (dp *DpH) DpWorkOnLeaderState(lWq *LeaderDpWorkQ) DpRetT {
+	return dp.DpHooks.DpLeaderSet(lWq)
+}
+
 // DpWorkSingle - routine to work on a single dp work queue request
 func DpWorkSingle(dp *DpH, m interface{}) DpRetT {
 	var ret DpRetT
@@ -842,6 +855,8 @@ func DpWorkSingle(dp *DpH, m interface{}) DpRetT {
 		ret = dp.DpWorkOnPeerOp(mq)
 	case *SockVIPDpWorkQ:
 		ret = dp.DpWorkOnSockVIP(mq)
+	case *LeaderDpWorkQ:
+		ret = dp.DpWorkOnLeaderState(mq)
 	default:
 		tk.LogIt(tk.LogError, "unexpected type %T\n", mq)
 		ret = DpWqUnkErr

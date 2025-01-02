@@ -486,6 +486,10 @@ func (h *CIStateH) CIStateUpdate(cm cmn.HASMod) (int, error) {
 			mh.bgp.UpdateCIState(cm.Instance, ci.State, ci.Vip)
 		}
 		go mh.zr.Rules.RulesSyncToClusterState()
+
+		if cm.Instance == cmn.CIDefault {
+			ci.DP(DpChange)
+		}
 		return ci.State, nil
 	}
 
@@ -620,18 +624,20 @@ func (h *CIStateH) CIBFDSessionGet() ([]cmn.BFDMod, error) {
 func (cn *ClusterNode) DP(work DpWorkT) int {
 
 	if cn.Egress {
-		if work == DpCreate {
-			if !utils.IsIPHostAddr(cn.Addr.String()) {
-				ret := nlp.AddVxLANPeerNoHook(ClusterNetID, cn.Addr.String())
-				if ret != 0 {
-					cn.Status = DpCreateErr
+		if mh.has.ClusterIf != "" {
+			if work == DpCreate {
+				if !utils.IsIPHostAddr(cn.Addr.String()) {
+					ret := nlp.AddVxLANPeerNoHook(ClusterNetID, cn.Addr.String())
+					if ret != 0 {
+						cn.Status = DpCreateErr
+					}
 				}
-			}
-			return 0
-		} else {
-			if !utils.IsIPHostAddr(cn.Addr.String()) {
-				nlp.DelVxLANPeerNoHook(ClusterNetID, cn.Addr.String())
 				return 0
+			} else {
+				if !utils.IsIPHostAddr(cn.Addr.String()) {
+					nlp.DelVxLANPeerNoHook(ClusterNetID, cn.Addr.String())
+					return 0
+				}
 			}
 		}
 	}
@@ -644,5 +650,18 @@ func (cn *ClusterNode) DP(work DpWorkT) int {
 
 	mh.dp.ToDpCh <- pwq
 
+	return 0
+}
+
+// DP - sync state of cluster state to data-path
+func (ci *ClusterInstance) DP(work DpWorkT) int {
+	lwq := new(LeaderDpWorkQ)
+	lwq.Work = work
+	if ci.StateStr == "MASTER" {
+		lwq.Leader = true
+	} else {
+		lwq.Leader = false
+	}
+	DpWorkSingle(mh.dp, lwq)
 	return 0
 }
