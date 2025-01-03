@@ -2478,6 +2478,12 @@ func (R *RuleH) DeleteEPHost(apiCall bool, name string, hostName string, probeTy
 		return RuleEpCountErr, errors.New("LB Rule-referred")
 	}
 
+	if ep.opts.egress {
+		epNode := cmn.ClusterNodeMod{Addr: net.ParseIP(hostName),
+			Egress: true}
+		mh.has.ClusterNodeDelete(epNode)
+	}
+
 	delete(R.epMap, ep.epKey)
 
 	tk.LogIt(tk.LogDebug, "ep-host deleted %v\n", key)
