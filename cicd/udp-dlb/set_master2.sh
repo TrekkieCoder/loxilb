@@ -3,7 +3,7 @@ curl -X 'POST' \
   -H 'accept: application/json' \
   -H 'Content-Type: application/json' \
   -d '{
-  "instance": "default",
+  "instance": "llb-inst0",
   "state": "BACKUP",
   "vip": "0.0.0.0"
 }'
@@ -13,7 +13,7 @@ curl -X 'POST' \
   -H 'accept: application/json' \
   -H 'Content-Type: application/json' \
   -d '{
-  "instance": "default",
+  "instance": "llb-inst0",
   "state": "MASTER",
   "vip": "0.0.0.0"
 }'
@@ -23,7 +23,7 @@ curl -X 'POST' \
   -H 'accept: application/json' \
   -H 'Content-Type: application/json' \
   -d '{
-  "instance": "default",
+  "instance": "llb-inst0",
   "state": "BACKUP",
   "vip": "0.0.0.0"
 }'
