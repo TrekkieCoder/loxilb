@@ -3164,8 +3164,8 @@ func (r *ruleEnt) DP(work DpWorkT) int {
 							packets := uint64(0)
 							nStat := new(StatDpWorkQ)
 							nStat.Work = DpStatsGetImm
-							nStat.Mark = (((uint32(r.ruleNum)) & 0xfff) << 4) | (uint32(numEndPoints) & 0xf)
-							nStat.Name = MapNameNat4
+							nStat.Mark = (((uint32(r.ruleNum)) & 0xfff) << 12) | (uint32(numEndPoints) & 0xfff)
+							nStat.Name = MapNameNat
 							nStat.Bytes = &bytes
 							nStat.Packets = &packets
 							DpWorkSingle(mh.dp, nStat)
@@ -3178,8 +3178,8 @@ func (r *ruleEnt) DP(work DpWorkT) int {
 					} else {
 						nStat := new(StatDpWorkQ)
 						nStat.Work = work
-						nStat.Mark = (((uint32(r.ruleNum)) & 0xfff) << 4) | (uint32(numEndPoints) & 0xf)
-						nStat.Name = MapNameNat4
+						nStat.Mark = (((uint32(r.ruleNum)) & 0xfff) << 12) | (uint32(numEndPoints) & 0xfff)
+						nStat.Name = MapNameNat
 						nStat.Bytes = &nEP.stat.bytes
 						nStat.Packets = &nEP.stat.packets
 						if work == DpStatsGetImm {

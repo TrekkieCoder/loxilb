@@ -18,20 +18,21 @@ package loxinet
 
 import (
 	"fmt"
-	cmn "github.com/loxilb-io/loxilb/common"
-	tk "github.com/loxilb-io/loxilib"
 	"net"
 	"os"
 	"runtime/debug"
 	"sync"
 	"time"
+
+	cmn "github.com/loxilb-io/loxilb/common"
+	tk "github.com/loxilb-io/loxilib"
 )
 
 // man names constants
 const (
 	MapNameCt4  = "CT4"
 	MapNameCt6  = "CT6"
-	MapNameNat4 = "NAT4"
+	MapNameNat  = "NAT"
 	MapNameBD   = "BD"
 	MapNameRxBD = "RXBD"
 	MapNameTxBD = "TXBD"
