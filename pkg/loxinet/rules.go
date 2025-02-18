@@ -2316,6 +2316,10 @@ func (R *RuleH) GetEpHosts() ([]cmn.EndPointMod, error) {
 			ret.CurrState = "ok"
 		}
 
+		if data.hostState == cmn.HostStateRed {
+			ret.CurrState = "red"
+		}
+
 		// Append to slice
 		res = append(res, ret)
 	}
@@ -2511,6 +2515,7 @@ func (R *RuleH) SetEPHostState(hostName string, state string) (int, error) {
 	for _, ep := range R.epMap {
 		if ep.hostName == hostName {
 			ep.hostState = state
+			tk.LogIt(tk.LogDebug, "ep %s - %s\n", ep.epKey, ep.hostState)
 		}
 	}
 
@@ -2741,8 +2746,6 @@ func epTicker(R *RuleH, helper int) {
 func (R *RuleH) RulesSync() {
 	rChg := false
 	for _, rule := range R.tables[RtLB].eMap {
-		ruleKeys := rule.tuples.String()
-		ruleActs := rule.act.String()
 		rChg = R.electEPSrc(rule)
 		rlChg := false
 		switch at := rule.act.action.(type) {
@@ -2765,6 +2768,8 @@ func (R *RuleH) RulesSync() {
 
 		rChg = R.syncEPHostState2Rule(rule, false)
 		if rChg {
+			ruleKeys := rule.tuples.String()
+			ruleActs := rule.act.String()
 			tk.LogIt(tk.LogDebug, "lb-Rule updated %d:%s,%s\n", rule.ruleNum, ruleKeys, ruleActs)
 			rule.DP(DpCreate)
 		}
