@@ -51,6 +51,7 @@ const (
 	RuleTupleErr
 	RuleArgsErr
 	RuleEpNotExistErr
+	RuleEpHostUnkErr
 )
 
 type ruleTMatch uint
@@ -202,6 +203,7 @@ type epHostOpts struct {
 type epHost struct {
 	epKey        string
 	hostName     string
+	hostState    string
 	ruleCount    int
 	inactive     bool
 	initProberOn bool
@@ -891,7 +893,7 @@ func validateXlateEPWeights(servEndPoints []cmn.LbEndPointArg) (int, error) {
 	return 0, nil
 }
 
-func (R *RuleH) modNatEpHost(r *ruleEnt, endpoints []ruleLBEp, doAddOp bool, liveCheckEn bool, egressEps bool) {
+func (R *RuleH) modEpHost(r *ruleEnt, endpoints []ruleLBEp, doAddOp bool, liveCheckEn bool, egressEps bool) {
 	var hopts epHostOpts
 	pType := ""
 	pPort := uint16(0)
@@ -1788,8 +1790,8 @@ func (R *RuleH) AddLbRule(serv cmn.LbServiceArg, servSecIPs []cmn.LbSecIPArg, al
 		// eRule.managed = serv.Managed
 
 		if !serv.Snat {
-			R.modNatEpHost(eRule, delEps, false, activateProbe, eRule.egress)
-			R.modNatEpHost(eRule, retEps, true, activateProbe, eRule.egress)
+			R.modEpHost(eRule, delEps, false, activateProbe, eRule.egress)
+			R.modEpHost(eRule, retEps, true, activateProbe, eRule.egress)
 			R.electEPSrc(eRule)
 		}
 
@@ -1869,7 +1871,7 @@ func (R *RuleH) AddLbRule(serv cmn.LbServiceArg, servSecIPs []cmn.LbSecIPArg, al
 
 	if !serv.Snat {
 		R.foldRecursiveEPs(r)
-		R.modNatEpHost(r, lBActs.endPoints, true, activateProbe, r.egress)
+		R.modEpHost(r, lBActs.endPoints, true, activateProbe, r.egress)
 		R.electEPSrc(r)
 		if serv.Mode == cmn.LBModeHostOneArm {
 			R.mkHostAssocs(r)
@@ -1954,7 +1956,7 @@ func (R *RuleH) DeleteLbRule(serv cmn.LbServiceArg) (int, error) {
 		activatedProbe = true
 	}
 	if rule.act.actType != RtActSnat {
-		R.modNatEpHost(rule, eEps, false, activatedProbe, rule.egress)
+		R.modEpHost(rule, eEps, false, activatedProbe, rule.egress)
 		R.unFoldRecursiveEPs(rule)
 	}
 
@@ -2328,6 +2330,10 @@ func (R *RuleH) IsEPHostActive(epKey string) bool {
 		return true // Are we sure ??
 	}
 
+	if ep.hostState == cmn.HostStateRed {
+		return false
+	}
+
 	return !ep.inactive
 }
 
@@ -2487,6 +2493,26 @@ func (R *RuleH) DeleteEPHost(apiCall bool, name string, hostName string, probeTy
 	delete(R.epMap, ep.epKey)
 
 	tk.LogIt(tk.LogDebug, "ep-host deleted %v\n", key)
+
+	return 0, nil
+}
+
+// SetEPHostState - Set an end-point host state
+// It will return 0 and nil error, else appropriate return code and error string will be set
+func (R *RuleH) SetEPHostState(hostName string, state string) (int, error) {
+
+	if state != cmn.HostStateGreen && state != cmn.HostStateYellow && state != cmn.HostStateRed {
+		return RuleEpHostUnkErr, errors.New("unknown ep-host-state")
+	}
+
+	R.epMx.Lock()
+	defer R.epMx.Unlock()
+
+	for _, ep := range R.epMap {
+		if ep.hostName == hostName {
+			ep.hostState = state
+		}
+	}
 
 	return 0, nil
 }
@@ -2705,7 +2731,6 @@ func epTicker(R *RuleH, helper int) {
 					break
 				}
 			}
-			epHosts = nil
 		}
 	}
 }

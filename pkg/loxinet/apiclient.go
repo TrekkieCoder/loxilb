@@ -627,6 +627,16 @@ func (na *NetAPIStruct) NetEpHostGet() ([]cmn.EndPointMod, error) {
 	return ret, err
 }
 
+// NetEpHostStateSet - Set a host state (which can internally have multiple end-points)
+func (na *NetAPIStruct) NetEpHostStateSet(em *cmn.EndPointHostMod) (int, error) {
+	if na.BgpPeerMode {
+		return RuleUnknownEpErr, errors.New("running in bgp only mode")
+	}
+
+	ret, err := mh.zr.Rules.SetEPHostState(em.HostName, em.State)
+	return ret, err
+}
+
 // NetParamSet - Set operational params of loxinet
 func (na *NetAPIStruct) NetParamSet(param cmn.ParamMod) (int, error) {
 	if na.BgpPeerMode {

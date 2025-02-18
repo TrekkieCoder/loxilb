@@ -100,3 +100,17 @@ func ConfigDeleteEndPoint(params operations.DeleteConfigEndpointEpipaddressIPAdd
 	}
 	return &ResultResponse{Result: "Success"}
 }
+
+func ConfigPostEndPointHostState(params operations.PostConfigEndpointhoststateParams) middleware.Responder {
+	tk.LogIt(tk.LogTrace, "api: EndPoint %s API called. url : %s\n", params.HTTPRequest.Method, params.HTTPRequest.URL)
+
+	EPHost := cmn.EndPointHostMod{}
+	EPHost.HostName = params.Attr.HostName
+	EPHost.State = params.Attr.State
+
+	_, err := ApiHooks.NetEpHostStateSet(&EPHost)
+	if err != nil {
+		return &ResultResponse{Result: err.Error()}
+	}
+	return &ResultResponse{Result: "Success"}
+}

@@ -1314,6 +1314,70 @@ func init() {
         }
       }
     },
+    "/config/endpointhoststate": {
+      "post": {
+        "description": "Sets the state of a host which can have multiple endpoints",
+        "summary": "Sets the state of a host",
+        "parameters": [
+          {
+            "description": "Attributes of end point",
+            "name": "attr",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/EndPointHostState"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Malformed arguments for API call",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "401": {
+            "description": "Invalid authentication credentials",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "403": {
+            "description": "Capacity insufficient",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "409": {
+            "description": "Resource Conflict.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "500": {
+            "description": "Internal service error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "503": {
+            "description": "Maintenance mode",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
     "/config/fdb": {
       "post": {
         "description": "Assign FDB in the device",
@@ -4857,6 +4921,19 @@ func init() {
         }
       }
     },
+    "EndPointHostState": {
+      "type": "object",
+      "properties": {
+        "hostName": {
+          "description": "Host name in CIDR",
+          "type": "string"
+        },
+        "state": {
+          "description": "Host state string (\"green\", \"yellow\", \"red\" )",
+          "type": "string"
+        }
+      }
+    },
     "Error": {
       "type": "object",
       "properties": {
@@ -7147,6 +7224,70 @@ func init() {
           },
           "409": {
             "description": "Resource Conflict. VLAN already exists OR dependency VRF/VNET not found",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "500": {
+            "description": "Internal service error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "503": {
+            "description": "Maintenance mode",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/config/endpointhoststate": {
+      "post": {
+        "description": "Sets the state of a host which can have multiple endpoints",
+        "summary": "Sets the state of a host",
+        "parameters": [
+          {
+            "description": "Attributes of end point",
+            "name": "attr",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/EndPointHostState"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "OK"
+          },
+          "400": {
+            "description": "Malformed arguments for API call",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "401": {
+            "description": "Invalid authentication credentials",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "403": {
+            "description": "Capacity insufficient",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "409": {
+            "description": "Resource Conflict.",
             "schema": {
               "$ref": "#/definitions/Error"
             }
@@ -11160,6 +11301,19 @@ func init() {
         },
         "probeType": {
           "description": "Type of probe used",
+          "type": "string"
+        }
+      }
+    },
+    "EndPointHostState": {
+      "type": "object",
+      "properties": {
+        "hostName": {
+          "description": "Host name in CIDR",
+          "type": "string"
+        },
+        "state": {
+          "description": "Host state string (\"green\", \"yellow\", \"red\" )",
           "type": "string"
         }
       }
