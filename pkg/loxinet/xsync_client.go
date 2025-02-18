@@ -72,6 +72,7 @@ func dialHTTPPath(network, address, path string) (*rpc.Client, error) {
 }
 
 func netRPCConnect(pe *DpPeer) int {
+	return 0
 	cStr := fmt.Sprintf("%s:%d", pe.Peer.String(), XSyncPort)
 	client, err := dialHTTPPath("tcp", cStr, rpc.DefaultRPCPath)
 	if client == nil || err != nil {
