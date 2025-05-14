@@ -33,14 +33,14 @@ package loxinet
 #include <sys/ioctl.h>
 #include <net/if.h>
 #include <pthread.h>
-#include "../../loxilb-ebpf/kernel/loxilb_libdp.h"
+#include "../../scp-linux/kernel/scp_ebpf_uapi.h"
 int bpf_map_get_next_key(int fd, const void *key, void *next_key);
 int bpf_map_lookup_elem(int fd, const void *key, void *value);
 extern void goMapNotiHandler(struct ll_dp_map_notif *);
 extern void goProxyEntCollector(struct dp_proxy_ct_ent *);
 extern void goLinuxArpResolver(unsigned int);
-#cgo CFLAGS:  -I./../../loxilb-ebpf/libbpf/src/ -I./../../loxilb-ebpf/common
-#cgo LDFLAGS: -L. -L/lib64 -L./../../loxilb-ebpf/kernel -L./../../loxilb-ebpf/libbpf/src/build/usr/lib64/ -Wl,-rpath=/lib64/ -l:./../../loxilb-ebpf/kernel/libloxilbdp.a -l:./../../loxilb-ebpf/libbpf/src/libbpf.a -lelf -lz -lssl -lcrypto
+#cgo CFLAGS:  -I./../../scp-linux/libbpf/src/ -I./../../scp-linux/common
+#cgo LDFLAGS: -L. -L/lib64 -L./../../scp-linux/kernel -L./../../scp-linux/libbpf/src/build/usr/lib64/ -Wl,-rpath=/lib64/ -l:./../../scp-linux/kernel/libscpuapi.a -l:./../../scp-linux/libbpf/src/libbpf.a -lelf -lz -lssl -lcrypto
 */
 import "C"
 import (
@@ -265,7 +265,7 @@ func DpEbpfSetLogLevel(logLevel tk.LogLevelT) {
 	cfg := C.struct_ebpfcfg{loglevel: 1}
 
 	DpEbpfDPLogLevel(&cfg, logLevel)
-	C.loxilb_set_loglevel(&cfg)
+	C.scp_uapi_set_loglevel(&cfg)
 }
 
 // DpEbpfInit - initialize the ebpf dp subsystem
@@ -305,7 +305,7 @@ func DpEbpfInit(clusterEn, rssEn, egrHooks, localSockPolicy, sockMapEn bool, nod
 
 	DpEbpfDPLogLevel(&cfg, logLevel)
 
-	C.loxilb_main(&cfg)
+	C.scp_uapi_main(&cfg)
 
 	// Make sure to unload eBPF programs at init time
 	ifList, err := net.Interfaces()

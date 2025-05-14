@@ -73,6 +73,7 @@ func ConfigPostFW(params operations.PostConfigFirewallParams, principal interfac
 	Opts.Record = params.Attr.Opts.Record
 	Opts.Mark = uint32(params.Attr.Opts.FwMark)
 	Opts.DoSnat = params.Attr.Opts.DoSnat
+	Opts.DoDnat = params.Attr.Opts.DoDnat
 	Opts.ToIP = params.Attr.Opts.ToIP
 	Opts.ToPort = uint16(params.Attr.Opts.ToPort)
 	Opts.OnDefault = params.Attr.Opts.OnDefault
@@ -210,6 +211,7 @@ func ConfigGetFW(params operations.GetConfigFirewallAllParams, principal interfa
 		tmpOpts.Record = FW.Opts.Record
 		tmpOpts.FwMark = int64(FW.Opts.Mark)
 		tmpOpts.DoSnat = FW.Opts.DoSnat
+		tmpOpts.DoDnat = FW.Opts.DoDnat
 		tmpOpts.ToIP = FW.Opts.ToIP
 		tmpOpts.ToPort = int64(FW.Opts.ToPort)
 		tmpOpts.OnDefault = FW.Opts.OnDefault

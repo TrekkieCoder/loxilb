@@ -6191,6 +6191,10 @@ func init() {
           "description": "traffic counters",
           "type": "string"
         },
+        "doDnat": {
+          "description": "Do DNAT on matching rule",
+          "type": "boolean"
+        },
         "doSnat": {
           "description": "Do SNAT on matching rule",
           "type": "boolean"
@@ -14190,6 +14194,10 @@ func init() {
         "counter": {
           "description": "traffic counters",
           "type": "string"
+        },
+        "doDnat": {
+          "description": "Do DNAT on matching rule",
+          "type": "boolean"
         },
         "doSnat": {
           "description": "Do SNAT on matching rule",

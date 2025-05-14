@@ -252,8 +252,8 @@ type ruleFwOpt struct {
 	rdrPort  string
 	fwMark   uint32
 	record   bool
-	snatIP   string
-	snatPort uint16
+	natIP    string
+	natPort  uint16
 	onDflt   bool
 }
 
@@ -703,7 +703,7 @@ func (a *ruleAct) String() string {
 				ks += fmt.Sprintf("Mark:%v ", na.opt.fwMark)
 			}
 			if a.actType == RtActSnat {
-				ks += fmt.Sprintf("%s:%d ", na.opt.snatIP, na.opt.snatPort)
+				ks += fmt.Sprintf("%s:%d ", na.opt.natIP, na.opt.natPort)
 			}
 			if na.opt.onDflt {
 				ks += fmt.Sprintf("egress ")
@@ -2052,10 +2052,14 @@ func (R *RuleH) GetFwRule() ([]cmn.FwRuleMod, error) {
 			ret.Opts.Trap = true
 		} else if fwOpts.op == RtActSnat {
 			ret.Opts.DoSnat = true
-			ret.Opts.ToIP = fwOpts.opt.snatIP
-			ret.Opts.ToPort = uint16(fwOpts.opt.snatPort)
+			ret.Opts.ToIP = fwOpts.opt.natIP
+			ret.Opts.ToPort = uint16(fwOpts.opt.natPort)
+		} else if fwOpts.op == RtActDnat {
+			ret.Opts.DoDnat = true
+			ret.Opts.ToIP = fwOpts.opt.natIP
+			ret.Opts.ToPort = uint16(fwOpts.opt.natPort)
 		}
-		if fwOpts.op != RtActSnat {
+		if fwOpts.op != RtActSnat && fwOpts.op != RtActDnat {
 			ret.Opts.Mark = fwOpts.opt.fwMark
 		}
 		ret.Opts.Record = fwOpts.opt.record
@@ -2080,7 +2084,7 @@ func (R *RuleH) AddFwRule(fwRule cmn.FwRuleArg, fwOptArgs cmn.FwOptArg) (int, er
 	var l4prot rule8Tuple
 
 	// Validate rule args
-	if fwOptArgs.DoSnat {
+	if fwOptArgs.DoSnat || fwOptArgs.DoDnat {
 		if tk.IsNetIPv6(fwOptArgs.ToIP) {
 			if fwRule.DstIP == "0.0.0.0/0" {
 				fwRule.DstIP = "::/0"
@@ -2123,7 +2127,7 @@ func (R *RuleH) AddFwRule(fwRule cmn.FwRuleArg, fwOptArgs cmn.FwOptArg) (int, er
 	eFw := R.tables[RtFw].eMap[rt.ruleKey()]
 
 	if eFw != nil {
-		if !fwOptArgs.DoSnat {
+		if !fwOptArgs.DoSnat && !fwOptArgs.DoDnat {
 			if eFw.act.action.(*ruleFwOpts).opt.fwMark != fwOptArgs.Mark {
 				eFw.Fw2DP(DpRemove)
 				eFw.act.action.(*ruleFwOpts).opt.fwMark = fwOptArgs.Mark
@@ -2157,13 +2161,18 @@ func (R *RuleH) AddFwRule(fwRule cmn.FwRuleArg, fwOptArgs cmn.FwOptArg) (int, er
 	} else if fwOptArgs.Trap {
 		r.act.actType = RtActTrap
 		fwOpts.op = RtActTrap
-	} else if fwOptArgs.DoSnat {
-		r.act.actType = RtActSnat
-		fwOpts.op = RtActSnat
-		fwOpts.opt.snatIP = fwOptArgs.ToIP
-		fwOpts.opt.snatPort = fwOptArgs.ToPort
+	} else if fwOptArgs.DoSnat|| fwOptArgs.DoDnat {
+		if fwOptArgs.DoSnat {
+			r.act.actType = RtActSnat
+			fwOpts.op = RtActSnat
+		} else {
+			r.act.actType = RtActDnat
+			fwOpts.op = RtActDnat
+		}
+		fwOpts.opt.natIP = fwOptArgs.ToIP
+		fwOpts.opt.natPort = fwOptArgs.ToPort
 
-		if sIP := net.ParseIP(fwOptArgs.ToIP); sIP == nil {
+		if ip := net.ParseIP(fwOptArgs.ToIP); ip == nil {
 			return RuleArgsErr, errors.New("malformed-args error")
 		}
 
@@ -2184,11 +2193,11 @@ func (R *RuleH) AddFwRule(fwRule cmn.FwRuleArg, fwOptArgs cmn.FwOptArg) (int, er
 	}
 	r.sT = time.Now()
 
-	if fwOptArgs.DoSnat {
-		// Create SNAT Rule
+	if fwOptArgs.DoSnat || fwOptArgs.DoDnat {
+		// Create SNAT or DNAT Rule
 		var servArg cmn.LbServiceArg
 		servArg.ServIP = "0.0.0.0"
-		if tk.IsNetIPv6(fwOpts.opt.snatIP) {
+		if tk.IsNetIPv6(fwOpts.opt.natIP) {
 			servArg.ServIP = "::"
 		}
 		servArg.ServPort = 0
@@ -2196,13 +2205,17 @@ func (R *RuleH) AddFwRule(fwRule cmn.FwRuleArg, fwOptArgs cmn.FwOptArg) (int, er
 		servArg.BlockNum = uint32(r.ruleNum) | NatFwMark
 		servArg.Sel = cmn.LbSelRr
 		servArg.Mode = cmn.LBModeDefault
-		servArg.Snat = true
+		if fwOptArgs.DoSnat {
+			servArg.Snat = true
+			servArg.Name = fmt.Sprintf("%s:%s:%d", "snat", fwOpts.opt.natIP, fwOpts.opt.natPort)
+		} else {
+			servArg.Name = fmt.Sprintf("%s:%s:%d", "dnat", fwOpts.opt.natIP, fwOpts.opt.natPort)
+
+		}
 		servArg.InactiveTimeout = LbDefaultInactiveTimeout
-		servArg.Name = fmt.Sprintf("%s:%s:%d", "snat", fwOpts.opt.snatIP, fwOpts.opt.snatPort)
+		natEP := []cmn.LbEndPointArg{{EpIP: fwOpts.opt.natIP, EpPort: fwOpts.opt.natPort}}
 
-		snatEP := []cmn.LbEndPointArg{{EpIP: fwOpts.opt.snatIP, EpPort: fwOpts.opt.snatPort}}
-
-		_, err := R.AddLbRule(servArg, nil, nil, snatEP)
+		_, err := R.AddLbRule(servArg, nil, nil, natEP)
 		if err != nil {
 			tk.LogIt(tk.LogError, "fw-rule - %s:%s (%s) snat create error\n", r.tuples.String(), r.act.String(), err)
 			return RuleArgsErr, errors.New("rule-snat error")
@@ -2275,7 +2288,7 @@ func (R *RuleH) DeleteFwRule(fwRule cmn.FwRuleArg) (int, error) {
 		return RuleNotExistsErr, errors.New("no-rule error")
 	}
 
-	if rule.act.actType == RtActSnat {
+	if rule.act.actType == RtActSnat || rule.act.actType == RtActDnat {
 		// Delete implicit SNAT Rule
 		var servArg cmn.LbServiceArg
 		servArg.ServIP = "0.0.0.0"
@@ -2288,7 +2301,7 @@ func (R *RuleH) DeleteFwRule(fwRule cmn.FwRuleArg) (int, error) {
 
 		switch fwOpts := rule.act.action.(type) {
 		case *ruleFwOpts:
-			if tk.IsNetIPv6(fwOpts.opt.snatIP) {
+			if tk.IsNetIPv6(fwOpts.opt.natIP) {
 				servArg.ServIP = "::"
 				if fwRule.DstIP == "0.0.0.0/0" {
 					fwRule.DstIP = "::/0"
@@ -2298,15 +2311,15 @@ func (R *RuleH) DeleteFwRule(fwRule cmn.FwRuleArg) (int, error) {
 				}
 			}
 
-			servArg.Name = fmt.Sprintf("%s:%s:%d", "Masq", fwOpts.opt.snatIP, fwOpts.opt.snatPort)
+			servArg.Name = fmt.Sprintf("%s:%s:%d", "Masq", fwOpts.opt.natIP, fwOpts.opt.natPort)
 			if fwOpts.opt.onDflt {
-				R.DeleteRuleVIP(net.ParseIP(fwOpts.opt.snatIP))
+				R.DeleteRuleVIP(net.ParseIP(fwOpts.opt.natIP))
 			}
 		}
 
 		_, err := R.DeleteLbRule(servArg)
 		if err != nil {
-			tk.LogIt(tk.LogError, "fw-rule - %s:%s snat delete error\n", rule.tuples.String(), rule.act.String())
+			tk.LogIt(tk.LogError, "fw-rule - %s:%s nat delete error\n", rule.tuples.String(), rule.act.String())
 		}
 	}
 

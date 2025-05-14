@@ -422,6 +422,8 @@ type FwOptArg struct {
 	Allow bool `json:"allow"`
 	// Mark - Mark the matching rule
 	Mark uint32 `json:"fwMark"`
+	// DoDnat - Do dnat on matching rule
+	DoDnat bool   `json:"doDnat"`
 	// DoSnat - Do snat on matching rule
 	DoSnat bool   `json:"doSnat"`
 	ToIP   string `json:"toIP"`

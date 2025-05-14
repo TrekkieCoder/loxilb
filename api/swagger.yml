@@ -4598,6 +4598,9 @@ definitions:
       doSnat:
         type: boolean
         description: Do SNAT on matching rule
+      doDnat:
+        type: boolean
+        description: Do DNAT on matching rule
       toIP:
         type: string
         description: Modify to given IP in CIDR notation

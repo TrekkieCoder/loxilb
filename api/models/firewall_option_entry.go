@@ -23,6 +23,9 @@ type FirewallOptionEntry struct {
 	// traffic counters
 	Counter string `json:"counter,omitempty"`
 
+	// Do DNAT on matching rule
+	DoDnat bool `json:"doDnat,omitempty"`
+
 	// Do SNAT on matching rule
 	DoSnat bool `json:"doSnat,omitempty"`
 
